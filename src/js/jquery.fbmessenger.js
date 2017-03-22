@@ -855,7 +855,7 @@
 			$.error('script is empty');
 		}
 		var that = this;
-		var schedule = function(index) {
+		var tryStep = function (index) {
 			if (index > that.options.script.length - 1) {
 				if (typeof that.options.endCallback === 'function') {
 					that.options.endCallback();
@@ -867,7 +867,7 @@
 			}
 			var item = that.options.script[index];
 			if (item) {
-				setTimeout(function() {
+				setTimeout(function () {
 					var args = item.args.concat([index]);
 					Plugin.prototype[item.method].apply(that, args);
 					if (typeof that.options.stepCallback === 'function') {
@@ -875,6 +875,16 @@
 					}
 					schedule(index + 1);
 				}, item.delay * that.options.timeScale);
+			}
+		}
+
+		var schedule = function (index) {
+			if (window && window.___previstool___pause) {
+				setTimeout(function(){
+					schedule(index);
+				}, 2000);
+			} else {
+				tryStep(index);
 			}
 		};
 		schedule(0);
