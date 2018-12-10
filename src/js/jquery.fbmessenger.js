@@ -18,7 +18,7 @@
 		botWelcomeMessage: 'jQuery.fbMessenger is a plugin to simulate interaction with a Facebook Messenger bot on an iPhone.',
 		leftUser: 'bot',
 		rightUser: 'user',
-		displayedCarrier: 'o2-de',
+		displayedCarrier: 'o2',
 		displayedTime: '22:00',
 		scrollTimeMs: 500,
 		timeScale: 1.0,
@@ -112,7 +112,13 @@
 		if (totalCount === undefined) {
 			text = '25' + this._localize('thousands');
 		} else {
-			text = totalCount > 999 ? (totalCount / 1000).toFixed(1) + this._localize('thousands') : totalCount;
+			if (totalCount > 999999) {
+				text = (totalCount / 1000000).toFixed(1) + this._localize('millions');
+			} else if (totalCount > 999) {
+				text = (totalCount / 1000).toFixed(1) + this._localize('thousands');
+			} else {
+				text = String(totalCount);
+			}
 		}
 		return text;
 	}
@@ -370,7 +376,7 @@
 		} else if ($user.hasClass(this.options.leftUser)) {
 			$icon = $user.find('.jsm-user-icon');
 		}
-		$wrapper = $('<div class="jsm-chat-row"></div>');
+		var $wrapper = $('<div class="jsm-chat-row"></div>');
 		// Check if a new timestamp has to be inserted
 		if (timestamp !== false) {
 			var ts = this.options.dateFormat(timestamp ? timestamp : new Date());
@@ -655,10 +661,11 @@
 		if (options === undefined || options.delay === undefined) {
 			this._checkWelcomeMessage();
 			var template = '<div class="jsm-chat-message jsm-left jsm-generic-template-wrapper"><div class="jsm-generic-template-background">';
+			var imageClass = 'jsm-image ' + (options && options.imageSquare ? 'jsm-square' : '');
 			$.each(items, function(index, item) {
 				template += '<div class="jsm-generic-template ' + (index === 0 ? 'jsm-selected' : '') + '">';
 				if (item.imageUrl) {
-					template += '<div class="jsm-image" style="background-image: url(\'' + item.imageUrl + '\');"></div>';
+					template += '<div class="' + imageClass + '" style="background-image: url(\'' + item.imageUrl + '\');"></div>';
 				}
 				template += '<div class="jsm-title"><p>' + item.title + '</p><p>' + item.subtitle + '</p></div>';
 				$.each(item.buttons, function(index2, button) {
@@ -805,14 +812,14 @@
 					direction = 1;
 					$page = $container.find('.jsm-persistent-menu-page:nth-child(' + (currentLevel + 2) + ')').empty();
 					$page.append('<div class="jsm-persistent-menu-title">' + currentMenu[menuItem].label + '</div>');
-					for (var i = 0, max = Math.max(5, currentMenu[menuItem].children.length); i < max; ++i) {
+					for (var i = 0, max = Math.min(5, currentMenu[menuItem].children.length); i < max; ++i) {
 						$page.append('<div class="jsm-persistent-menu-entry"><div class="jsm-persistent-menu-text">' + currentMenu[menuItem].children[i].label + '</div></div>');
 					}
 					level.push(menuItem);
 				} else {
 					setTimeout(function() {
 						$container.find('.jsm-persistent-menu-entry').removeClass('jsm-selected');
-					}, 500);
+					}, 500 * this.options.timeScale);
 					this.message(this.options.rightUser, currentMenu[menuItem].label, { timestamp: false });
 					if (currentLevel > 0) {
 						$page = $container.find('.jsm-persistent-menu-page:first');
@@ -823,6 +830,7 @@
 			}
 			$container.data('level', level);
 			if (direction !== 0) {
+				var that = this;
 				setTimeout(function() {
 					if (direction > 0) {
 						$container.find('.jsm-persistent-menu-page').not($page).addClass('jsm-has-overlay');
@@ -830,7 +838,7 @@
 					$container.animate({
 						scrollLeft: $container.width() * (currentLevel + direction) ,
 						height: $page.height()
-					}, 500);
+					}, 500 * that.options.timeScale);
 				}, 250);
 			}
 		} else {
