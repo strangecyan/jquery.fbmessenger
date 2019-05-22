@@ -352,7 +352,7 @@
 		}, 1);
 	}
 
-	Plugin.prototype._addNewContent = function(user, $payload, timestamp) {
+	Plugin.prototype._addNewContent = function (user, $payload, timestamp, index) {
 		var that = this;
 		var fontSize = parseInt($(this.element).css('font-size'));
 		var $content = this.$element.find('.jsm-chat-content');
@@ -367,7 +367,7 @@
 		var $icon = null;
 		var newWrapper = $user.length === 0 || !$user.hasClass(user);
 		if (newWrapper) {
-			$user = $('<div class="jsm-user-wrapper ' + user + '"></div>');
+			$user = $('<div id="item-' + index + '" class="jsm-user-wrapper ' + user + '"></div>');
 			if (user === this.options.leftUser) {
 				$icon = $('<div class="jsm-user-icon"><img class="jsm-bot-logo" src="' + this.options.botLogoUrl + '"><img class="jsm-messenger-flash" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4AgVDxUiZK69gwAABCVJREFUSMe1lltMHFUYx3/nzO6yS6EkwjZRpAv2ZYWXxoTYqDWA9cH2ASOmiDbwoFEbE31ppBAN6YPWmupbo6SJCTTFktaKNraJF2g0IjZpi0ZWSiRlsaGGBQJ2ge1eZnw4DLuzVy71n0wy55sz/3++75zvIoKhIMmYWprn5NhlNClwfjuI07WFKu9OKh7yahUlD3hcxduahRAtAIaudwXnAt13bo75p33DscC1X/hiRxlBp5NXnqynxvsI6SDSCQ/P+fn67+u4pYvGUKEs3VXbKm22I4Cd7IiEo5GOgdGrxy7+Pqi/13CQgjxX+p3BUNDyLIYWOfvXIJcmrxOORVqNDSISi7YZhkGmJ8VjKSTT4UXNU1CynOjhxAL0+qB/AnwBCCwpuzsfKt1QVw6NlVBeZI0A4AJiOUPtcricUshlc+1fgLYBJaob2eMshRL/oA62b7XSAiGr8N1FMBSj0+7UNKlFzY89I/DaRQiGWRcKHNC5F16ssphtiZ7L4MwcAHbNjia1VU8//hUO9K1fFNQ/B/rg+JDFHLVER4/GEELgsDlazTPtGYFD34PBxmEAb/+guBLQthrqKf8E7tJSadNsMYDJf6Gqc2OeZgr7H6+CJ37pNECXUpPYNFuraT3cf+9EzbC3DVhM7QBifnaGovuKw4B9YgF2nMh9e9cLKWD8DUuqCenMz9fMs11LygA8WJh7jybAZVPvugFnrGetSUee02Ou+idyE75VDaMHYU9F5j27y+DNaggl3OMBv2WLRwohms2VL5Bd9HkvfPQ0bLHDN43Q4LV+Ly2E089C++Nw4qo1K5K4myXQYq7MMpjJi1P1KoQADg16n4OXd0KeBocfg9HXwVsM+89DOKlITlu5W2zJuZcOlSXw1X5w2uDnW1B9vxLWBJzcBx27oWwr3JyHfb1wZw1ZIQ1d7zIX2/JTN5QWwqUmmA9Bwzl4ogueORMnFyjRmSVl/yeYXiiJu0sGA7e7Vz1zWzcX5cG5BvhsWBWV8zfil3DP6fjRLEWg/izcmM3sYRJ3t5wd/3P1vtWVx784NFXkX/gSjvwEy1Er0ZUpqDmlutdLfTB4K3toazyWpV/e/m0ottI3aaxUyQ6qYX1yTRFngm8GHv4U+sZyF5Ama6eKyckrPxK9G+oAVVkaK1c6uL62qpQciXRIGhDeBZCRpSDjAxeOmdajtaqw3ysUOBRnAt4HkAC+Cz26Ho20g+oinXvVbd0sBIrLY/VWBxBj3/Wx/dEa8gqLAMJm3T4+pPqpsQnRD5+CQ7tSzOrFMCzUWuKk8H+OPsnCAE5gU8Pe0VpLeNMPe2mEUzw3x9vPR+CyH0aSxtsqt8rTpqqU8TbF03h9zjJ0G4bRZmwc72TjziWMYRhyhWQ9gjIXb6ZQZxwsAA/QnNBOu4BuwJ82pBnwH0NDmSsr0rnYAAAAAElFTkSuQmCC"></div>');
 				$user.append($icon);
@@ -431,7 +431,11 @@
 		this._scrollDown();
 	}
 
-	Plugin.prototype.message = function(user, text, options) {
+	Plugin.prototype.message = function(user, text, options, index) {
+		if (typeof options === 'number') {
+			index = options;
+		}
+
 		if (options === undefined || options.delay === undefined) {
 			this._checkWelcomeMessage();
 			this._checkUser(user);
@@ -464,7 +468,7 @@
 								statusDisplay +
 								'</div>'
 							);
-			this._addNewContent(user, $content, options.timestamp);
+			this._addNewContent(user, $content, options.timestamp, index);
 			if (statusDisplay) {
 				setTimeout(function() {
 					$content.find('svg:first').addClass('jsm-hide');
@@ -862,8 +866,30 @@
 		if (this.options.script.length === 0) {
 			$.error('script is empty');
 		}
+		this.resume(0);
+	}
+
+	Plugin.prototype.rewind = function (index) {
+		let item = this.$element.find('#item-' + index);
+		console.log(item);
+		while(item.length === 0) {
+			console.log('Going back');
+			index = index - 1;
+			item = this.$element.find('#item-' + index);
+		}
+		item.remove();
+		this.options.event.dispatchEvent(new CustomEvent('step', { detail: { index: index } }))
+	}
+
+	Plugin.prototype.pause = function () {
+		console.log('Setting force pause.');
+		this.forcePause = true;
+	}
+
+	Plugin.prototype.resume = function (index) {
 		var that = this;
-		var tryStep = function (index) {
+		that.forcePause = false;
+		var schedule = function (index) {
 			if (index > that.options.script.length - 1) {
 				if (typeof that.options.endCallback === 'function') {
 					that.options.endCallback();
@@ -877,7 +903,21 @@
 			if (item) {
 				setTimeout(function () {
 					var args = item.args.concat([index]);
-					Plugin.prototype[item.method].apply(that, args);
+
+					if (that.forcePause) {
+						that.options.event.dispatchEvent(new Event('pause'));
+						return;
+					}
+
+					that.options.event.dispatchEvent(new CustomEvent('step', { detail: { index: index }}))
+
+					if (item.method === 'pause') {
+						that.options.event.dispatchEvent(new Event('pause'));
+						return;
+					}
+
+					Plugin.prototype[item.method].apply(that, args)
+
 					if (typeof that.options.stepCallback === 'function') {
 						that.options.stepCallback(index);
 					}
@@ -885,17 +925,7 @@
 				}, item.delay * that.options.timeScale);
 			}
 		}
-
-		var schedule = function (index) {
-			if (window && window.___previstool___pause) {
-				setTimeout(function(){
-					schedule(index);
-				}, 2000);
-			} else {
-				tryStep(index);
-			}
-		};
-		schedule(0);
+		schedule(index);
 	}
 
 	Plugin.prototype.reset = function() {
