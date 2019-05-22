@@ -870,7 +870,7 @@
 	}
 
 	Plugin.prototype.rewind = function (index) {
-		let item = this.$element.find('#item-' + index);
+		var item = this.$element.find('#item-' + index);
 		console.log(item);
 		while(item.length === 0) {
 			console.log('Going back');
