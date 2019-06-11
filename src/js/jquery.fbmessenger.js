@@ -886,7 +886,45 @@
 		this.forcePause = true;
 	}
 
-	Plugin.prototype.resume = function (index) {
+	Plugin.prototype.description = function (text) {
+		console.log('Description?');
+		this.options.event.dispatchEvent(new CustomEvent('description', { detail: text }))
+	}
+
+	Plugin.prototype.rewindToLastChapter = function (index) {
+		var that = this;
+		var reversedIndex = this.options.script.length - index;
+		var done = false;
+		var firstpass = false;
+		console.log('Trying to find...')
+		var arrayCopy = this.options.script.slice()
+		arrayCopy.reverse()
+		arrayCopy.forEach(function(item, i) {
+			console.log(reversedIndex, i);
+			if (reversedIndex >= i) {
+				return;
+			}
+
+			if (item.method !== 'description' && i !== arrayCopy.length - 1) {
+				return;
+			}
+
+			if (done || (!firstpass && i !== arrayCopy.length - 1)) {
+				firstpass = true;
+				return;
+			}
+			
+			done = true;
+			var reReversedIndex = arrayCopy.length - i;
+			console.log('Previous description is', reReversedIndex, that.options.script, item);
+			for (var j = reReversedIndex; j <= index; j++) {
+				that.$element.find('#item-' + j).remove();
+			}
+			that.resume(reReversedIndex - 1, 'force');
+		})
+	}
+
+	Plugin.prototype.resume = function (index, force) {
 		var that = this;
 		that.forcePause = false;
 		var schedule = function (index) {
@@ -915,6 +953,12 @@
 						that.options.event.dispatchEvent(new Event('pause'));
 						return;
 					}
+
+					if (item.method === 'description' && index !== 1 && force !== 'force') {
+						return;
+					}
+
+					force = null;
 
 					Plugin.prototype[item.method].apply(that, args)
 
